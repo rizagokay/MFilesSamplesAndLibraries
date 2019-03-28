@@ -85,7 +85,7 @@ namespace MFaaP.MFWSClient.Tests
 		
 		/// <summary>
 		/// Gets or sets the response data which the endpoint will return.
-		/// Defaults to a new instance of <see cref="T"/>.
+		/// Defaults to null string.
 		/// </summary>
 		public virtual string ResponseData { get; set; }
 			= null;
@@ -93,6 +93,13 @@ namespace MFaaP.MFWSClient.Tests
 		/// The request body which is expected to be passed.
 		/// </summary>
 		public Parameter ExpectedRequestBody { get; set; }
+
+		/// <summary>
+		/// The extensions that must be specified in the <see cref="MFWSClientBase.ExtensionsHttpHeaderName"/>
+		/// HTTP header.
+		/// </summary>
+		public MFWSExtensions ExpectedMFWSExtensions{ get; set; }
+			= MFWSExtensions.None;
 
 		/// <summary>
 		/// The serialiser to use for Json encoding (should be the same as set up within
@@ -158,8 +165,11 @@ namespace MFaaP.MFWSClient.Tests
 					parameter.ContentType = serializer.ContentType;
 					if (null != body)
 					{
-						parameter.Value = serializer.Serialize(body);
+						parameter.Value = body is string
+							? body
+							: serializer.Serialize(body);
 					}
+
 					break;
 				case DataFormat.Xml:
 					serializer = this.XmlSerializer;
@@ -167,8 +177,11 @@ namespace MFaaP.MFWSClient.Tests
 					parameter.ContentType = serializer.ContentType;
 					if (null != body)
 					{
-						parameter.Value = serializer.Serialize(body);
+						parameter.Value = body is string
+							? body
+							: serializer.Serialize(body);
 					}
+
 					break;
 				default:
 					throw new ArgumentException("Data format not expected.");
@@ -230,7 +243,7 @@ namespace MFaaP.MFWSClient.Tests
 			Assert.AreEqual(
 				this.ExpectedResourceAddress,
 				r.Resource,
-				$"Resource {this.ExpectedResourceAddress} expected, but a {r.Resource} was used.");
+				$"Resource {this.ExpectedResourceAddress} expected, but {r.Resource} was used.");
 
 			// Ensure the data format is correct.
 			Assert.AreEqual(
@@ -255,6 +268,39 @@ namespace MFaaP.MFWSClient.Tests
 				Assert.AreEqual(
 					this.ExpectedRequestBody.Value,
 					requestBody.Value);
+			}
+
+			// Were specific MFWS extensions expected?
+			if (MFWSExtensions.None != this.ExpectedMFWSExtensions)
+			{
+
+				// Ensure that the "X-Extensions" header is set.
+				var extensionsHeader = r
+					.Parameters?
+					.FirstOrDefault(dp => dp.Name == "X-Extensions" && dp.Type == ParameterType.HttpHeader);
+				Assert.IsNotNull(extensionsHeader, $"The {MFWSClientBase.ExtensionsHttpHeaderName} HTTP header was not found on the request.");
+
+				// Extract the registered extensions.
+				var extensionsValues = ((extensionsHeader.Value as string) ?? "").Split(",".ToCharArray());
+
+				// Ensure that the ones we want are added.
+				foreach (var possibleExtension in Enum.GetValues(typeof(MFWSExtensions)).Cast<MFWSExtensions>())
+				{
+					// Ignore "none".
+					if (possibleExtension == MFWSExtensions.None)
+						continue;
+
+					// Have we enabled this extension?
+					if (false == this.ExpectedMFWSExtensions.HasFlag(possibleExtension))
+						continue;
+
+					// If it is missing then fail.
+					if (false == extensionsValues.Contains(possibleExtension.ToString()))
+					{
+						Assert.Fail(
+							$"{possibleExtension.ToString()} is not in the {MFWSClientBase.ExtensionsHttpHeaderName} HTTP header.");
+					}
+				}
 			}
 		}
 
@@ -289,9 +335,12 @@ namespace MFaaP.MFWSClient.Tests
 		: RestApiTestRunner
 		where T : class, new()
 	{
-		/// <inheritdoc />
+		/// <summary>
+		/// Gets or sets the response data which the endpoint will return.
+		/// Defaults to a new instance of <see cref="T"/>.
+		/// </summary>
 		public new T ResponseData { get; set; }
-		= new T();
+			= new T();
 
 		/// <inheritdoc />
 		public RestApiTestRunner(RestSharp.Method expectedMethod,
@@ -300,7 +349,7 @@ namespace MFaaP.MFWSClient.Tests
 		{
 			// Remove the non-generic verification task.
 			this.VerifyTasks.Clear();
-			this.VerifyTasks.Add(c => c.ExecuteTaskAsync<T>(It.IsAny<IRestRequest>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
+			this.VerifyTasks.Add(c => c.ExecuteTaskAsync<T>(It.IsAny<IRestRequest>(), It.IsAny<CancellationToken>()), Times.AtLeast(1));
 
 			// Set up the mock for the generic ExecuteTaskAsync method.
 			this.RestClientMock

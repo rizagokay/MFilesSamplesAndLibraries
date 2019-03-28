@@ -48,7 +48,12 @@
   <ItemGroup>
     <Compile Include="ExtensionMethods\FolderContentItemExtensionMethods.cs" />
     <Compile Include="MFWSClient.Authentication.cs" />
+    <Compile Include="MFWSExtensions.cs" />
+    <Compile Include="MFWSVaultExtensionAuthenticationOperations.cs" />
+    <Compile Include="MFWSVaultExternalObjectOperations.cs" />
+    <Compile Include="MFWSVaultAutomaticMetadataOperations.cs" />
     <Compile Include="MFWSVaultClassOperations.cs" />
+    <Compile Include="MFWSVaultWorkflowOperations.cs" />
     <Compile Include="MFWSVaultPropertyDefOperations.cs" />
     <Compile Include="MFWSVaultValueListOperations.cs" />
     <Compile Include="MFWSVaultObjectTypeOperations.cs" />
@@ -78,6 +83,7 @@
     <Compile Include="Searching\PropertyValues\TextPropertyValueSearchCondition.cs" />
     <Compile Include="Searching\PropertyValues\PropertyValueSearchConditionBase.cs" />
     <Compile Include="Searching\ObjectTypeSearchCondition.cs" />
+    <Compile Include="Searching\ValueListSearchCondition.cs" />
     <Compile Include="Searching\QuickSearchCondition.cs" />
     <Compile Include="Searching\SearchConditionBase.cs" />
     <Compile Include="Searching\SearchConditionOperators.cs" />

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using RestSharp;
 
 namespace MFaaP.MFWSClient
@@ -15,30 +17,20 @@ namespace MFaaP.MFWSClient
 		/// <summary>
 		/// The HTTP header name for the "Accept Language" header.
 		/// </summary>
-		private const string AcceptLanguageHttpHeaderName = "Accept-Language";
+		public const string AcceptLanguageHttpHeaderName = "Accept-Language";
 
 		/// <summary>
-		/// Expected signature for the <see cref="MFWSClientBase.BeforeExecuteRequest"/> event.
+		/// The HTTP header for the extensions.
 		/// </summary>
-		/// <param name="sender">The sender.</param>
-		/// <param name="e">The arguments.</param>
-		public delegate void BeforeExecuteRequestHandler(object sender, RestRequestEventArgs e);
+		public const string ExtensionsHttpHeaderName = "X-Extensions";
 
 		/// <summary>
-		/// Occurs before a request is executed.
+		/// Defines the extensions that are enabled via the <see cref="ExtensionsHttpHeaderName"/> HTTP header.
 		/// </summary>
-		public event BeforeExecuteRequestHandler BeforeExecuteRequest;
-		/// <summary>
-		/// Expected signature for the <see cref="MFWSClientBase.AfterExecuteRequest"/> event.
-		/// </summary>
-		/// <param name="sender">The sender.</param>
-		/// <param name="e">The arguments.</param>
-		public delegate void AfterExecuteRequestHandler(object sender, RestResponseEventArgs e);
-
-		/// <summary>
-		/// Occurs after a request is executed.
-		/// </summary>
-		public event AfterExecuteRequestHandler AfterExecuteRequest;
+		/// <remarks>Some extensions may be required for server functionality to work.
+		/// For example: <see cref="MFWSExtensions.IML"/> is required for methods on <see cref="MFWSVaultAutomaticMetadataOperations"/>.</remarks>
+		public MFWSExtensions EnabledMFWSExtensions { get; set; }
+			= MFWSExtensions.None;
 
 		/// <summary>
 		/// This is the RestClient which will do the actual requests.
@@ -126,6 +118,26 @@ namespace MFaaP.MFWSClient
 		public MFWSVaultPropertyDefOperations PropertyDefOperations { get; }
 
 		/// <summary>
+		/// Gets the automatic metadata operations interface.
+		/// </summary>
+		public MFWSVaultAutomaticMetadataOperations AutomaticMetadataOperations { get; }
+
+		/// <summary>
+		/// Gets the workflow operations interface.
+		/// </summary>
+		public MFWSVaultWorkflowOperations WorkflowOperations { get; }
+
+		/// <summary>
+		/// Gets the external object operations interface.
+		/// </summary>
+		public MFWSVaultExternalObjectOperations ExternalObjectOperations { get; }
+
+		/// <summary>
+		/// Gets the extension authentications operations interface.
+		/// </summary>
+		public MFWSVaultExtensionAuthenticationOperations ExtensionAuthenticationOperations { get; }
+
+		/// <summary>
 		/// Creates an MFWSClient pointing at the MFWA site.
 		/// </summary>
 		/// <param name="restClient">The <see cref="IRestClient"/> to use for HTTP requests.</param>
@@ -150,6 +162,10 @@ namespace MFaaP.MFWSClient
 			this.ObjectFileOperations = new MFWSVaultObjectFileOperations(this);
 			this.ClassOperations = new MFWSVaultClassOperations(this);
 			this.PropertyDefOperations = new MFWSVaultPropertyDefOperations(this);
+			this.AutomaticMetadataOperations = new MFWSVaultAutomaticMetadataOperations(this);
+			this.WorkflowOperations = new MFWSVaultWorkflowOperations(this);
+			this.ExternalObjectOperations = new MFWSVaultExternalObjectOperations(this);
+			this.ExtensionAuthenticationOperations = new MFWSVaultExtensionAuthenticationOperations(this);
 		}
 
 		/// <summary>
@@ -182,7 +198,7 @@ namespace MFaaP.MFWSClient
 		/// </summary>
 		/// <param name="acceptLanguages">
 		/// The language string to use, in a valid format: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.4.
-		/// <example>"da, en-gb;q=0.8, en;q=0.7" would mean "I prefer Danish, but will accept British English and other types of English".</example>
+		/// <example>"da, en-gb;q=0.8, en;q=0.7" would mean "I prefer Danish, but will accept British English and other types of English in that order of preference".</example>
 		/// </param>
 		/// <remarks>Removes any existing "Accept-Language" headers.</remarks>
 		public void SetAcceptLanguage(string acceptLanguages)
@@ -212,7 +228,7 @@ namespace MFaaP.MFWSClient
 		/// <param name="acceptLanguages">
 		/// A collection of language strings to use.  Each string should contain the culture name (any acceptable format), optionally followed by a semi-colon and the weighting.
 		/// ref: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.4.
-		/// <example>"da", "en-gb;q=0.8", "en;q=0.7" would mean "I prefer Danish, but will accept British English and other types of English".</example>
+		/// <example>"da", "en-gb;q=0.8", "en;q=0.7" would mean "I prefer Danish, but will accept British English and other types of English in that order of preference".</example>
 		/// </param>
 		/// <remarks>Removes any existing "Accept-Language" headers.</remarks>
 		public void SetAcceptLanguage(params string[] acceptLanguages)
@@ -221,48 +237,48 @@ namespace MFaaP.MFWSClient
 		}
 
 		/// <summary>
-		/// Notifies any subscribers of <see cref="BeforeExecuteRequest"/>.
+		/// Resolves multiple vault structural aliases to ids at once.
 		/// </summary>
-		/// <param name="e"></param>
-		protected virtual void OnBeforeExecuteRequest(IRestRequest e)
+		/// <param name="aliasRequest">The collection of aliases to resolve.</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <returns>An awaitable task for the request.</returns>
+		/// <remarks>Only available in M-Files 12.0.6768.0 upwards.</remarks>
+		public async Task<VaultStructureAliasResponse> GetMetadataStructureIDsByAliasesAsync(VaultStructureAliasRequest aliasRequest,
+			CancellationToken token = default(CancellationToken))
 		{
-#if DEBUG
-			// Output the basic request data.
-			System.Diagnostics.Debug.WriteLine($"Executing {e.Method} request to {e.Resource}");
+			// Sanity.
+			if (null == aliasRequest)
+				throw new ArgumentNullException(nameof(aliasRequest));
 
-			// If we have any parameters then output them.
-			if ((e.Parameters?.Count ?? 0) != 0)
-			{
-				// ReSharper disable once PossibleNullReferenceException
-				foreach (var parameter in e.Parameters)
-				{
-					System.Diagnostics.Debug.WriteLine($"\t({parameter.Type}) {parameter.Name} = {parameter.Value} (type: {parameter.ContentType ?? "Unspecified"})");
-				}
-			}
-#endif
+			// Create the request.
+			var request = new RestRequest($"/REST/structure/metadatastructure/itemidbyalias.aspx");
 
-			// Notify subscribers.
-			this.BeforeExecuteRequest?.Invoke(this, new RestRequestEventArgs(e));
+			// Assign the body.
+			request.AddJsonBody(aliasRequest);
+
+			// Make the request and get the response.
+			var response = await this.Post<VaultStructureAliasResponse>(request, token)
+				.ConfigureAwait(false);
+
+			// Return the data.
+			return response.Data;
 		}
 
 		/// <summary>
-		/// Notifies any subscribers of <see cref="AfterExecuteRequest"/>
+		/// Resolves multiple vault structural aliases to ids at once.
 		/// </summary>
-		/// <param name="e"></param>
-		protected virtual void OnAfterExecuteRequest(IRestResponse e)
+		/// <param name="aliasRequest">The collection of aliases to resolve.</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <returns>An awaitable task for the request.</returns>
+		public VaultStructureAliasResponse GetMetadataStructureIDsByAliases(VaultStructureAliasRequest aliasRequest,
+			CancellationToken token = default(CancellationToken))
 		{
-#if DEBUG
-			if (null != e)
-			{
-				System.Diagnostics.Debug.WriteLine($"{e.StatusCode} received from {e.ResponseUri}: {e.Content}");
-			}
-#endif
-
-			// Notify subscribers.
-			this.AfterExecuteRequest?.Invoke(this, new RestResponseEventArgs(e));
-
-			// If we had an invalid response, throw it.
-			this.EnsureValidResponse(e);
+			// Execute the async method.
+			return this.GetMetadataStructureIDsByAliasesAsync(aliasRequest, token)
+				.ConfigureAwait(false)
+				.GetAwaiter()
+				.GetResult();
 		}
+
 	}
 }

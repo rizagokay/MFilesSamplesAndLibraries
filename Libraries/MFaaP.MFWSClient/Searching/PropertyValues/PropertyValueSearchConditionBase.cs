@@ -1,8 +1,11 @@
+using System;
+
 namespace MFaaP.MFWSClient
 {
 	/// <summary>
 	/// Represents a search condition that restricts by a property value.
 	/// </summary>
+	[Serializable]
 	public abstract class PropertyValueSearchConditionBase<T>
 		: SearchConditionBase<T>
 	{

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +23,191 @@ namespace MFaaP.MFWSClient
 		{
 		}
 
+		#region Renaming objects
+
+		/// <summary>
+		/// Renames the object by altering its title.
+		/// </summary>
+		/// <param name="objVer">The object to rename.</param>
+		/// <param name="newObjectName">The new name of the object.</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <returns>Information on the renamed object.</returns>
+		public async Task<ObjectVersion> RenameObjectAsync(ObjVer objVer,
+			string newObjectName,
+			CancellationToken token = default(CancellationToken))
+		{
+			// Sanity.
+			if (null == objVer)
+				throw new ArgumentNullException(nameof(objVer));
+
+			// Extract the URI elements.
+			int objectTypeId;
+			string objectId, objectVersionId;
+			objVer.GetUriParameters(out objectTypeId, out objectId, out objectVersionId);
+
+			// Create the request.
+			var request = new RestRequest($"/REST/objects/{objectTypeId}/{objectId}/{objectVersionId}/title");
+			request.AddJsonBody(new PrimitiveType<string>() { Value = newObjectName });
+
+			// Make the request and get the response.
+			var response = await this.MFWSClient.Put<ObjectVersion>(request, token)
+				.ConfigureAwait(false);
+
+			// Return the data.
+			return response.Data;
+		}
+
+		/// <summary>
+		/// Renames the object by altering its title.
+		/// </summary>
+		/// <param name="objId">The object to rename.</param>
+		/// <param name="newObjectName">The new name of the object.</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <returns>Information on the renamed object.</returns>
+		public Task<ObjectVersion> RenameObjectAsync(
+			ObjID objId,
+			string newObjectName,
+			CancellationToken token = default(CancellationToken))
+		{
+			return this.RenameObjectAsync(new ObjVer()
+			{
+				Version = -1,
+				ID = objId.ID,
+				Type = objId.Type,
+				ExternalRepositoryObjectID = objId.ExternalRepositoryObjectID,
+				ExternalRepositoryName = objId.ExternalRepositoryName,
+				ExternalRepositoryObjectVersionID = null,
+				VersionType = MFObjVerVersionType.Latest
+			}, newObjectName, token);
+		}
+
+		/// <summary>
+		/// Renames the object by altering its title.
+		/// </summary>
+		/// <param name="objVer">The object to rename.</param>
+		/// <param name="newObjectName">The new name of the object.</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <returns>Information on the renamed object.</returns>
+		/// <remarks>ref: http://developer.m-files.com/APIs/REST-API/Reference/resources/objects/type/objectid/version/title/ </remarks>
+		public ObjectVersion RenameObject(ObjVer objVer,
+			string newObjectName,
+			CancellationToken token = default(CancellationToken))
+		{
+			// Execute the async method.
+			return this.RenameObjectAsync(objVer, newObjectName, token)
+				.ConfigureAwait(false)
+				.GetAwaiter()
+				.GetResult();
+		}
+
+		/// <summary>
+		/// Renames the object by altering its title.
+		/// </summary>
+		/// <param name="objId">The object to rename.</param>
+		/// <param name="newObjectName">The new name of the object.</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <returns>Information on the renamed object.</returns>
+		public ObjectVersion RenameObject(
+			ObjID objId,
+			string newObjectName,
+			CancellationToken token = default(CancellationToken))
+		{
+			// Use the other overload.
+			return this.RenameObject(new ObjVer()
+			{
+				Version = -1,
+				ID = objId.ID,
+				Type = objId.Type,
+				ExternalRepositoryObjectID = objId.ExternalRepositoryObjectID,
+				ExternalRepositoryName = objId.ExternalRepositoryName,
+				ExternalRepositoryObjectVersionID = null,
+				VersionType = MFObjVerVersionType.Latest
+			}, newObjectName, token);
+		}
+
+		#endregion
+
+		#region Getting the latest object version and properties
+
+		/// <summary>
+		/// Retrieves the latest version of the specified object version.
+		/// </summary>
+		/// <param name="objId">The Id of the object.</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <returns>The ObjectVersion, if it is visible to the user.</returns>
+		public async Task<ExtendedObjectVersion> GetLatestObjectVersionAndPropertiesAsync(ObjID objId, CancellationToken token = default(CancellationToken))
+		{
+			// Sanity.
+			if (null == objId)
+				throw new ArgumentNullException(nameof(objId));
+
+			// Extract the URI elements.
+			int objectTypeId;
+			string objectId;
+			objId.GetUriParameters(out objectTypeId, out objectId);
+
+			// Create the request.
+			string resource = $"/REST/objects/{objectTypeId}/{objectId}/latest.aspx?include=properties";
+			var request = new RestRequest(resource);
+
+			// Make the request and get the response.
+			var response = await this.MFWSClient.Get<ExtendedObjectVersion>(request, token)
+				.ConfigureAwait(false);
+
+			// Return the object data.
+			return response.Data;
+		}
+
+		/// <summary>
+		/// Retrieves the latest version of the specified object version.
+		/// </summary>
+		/// <param name="objectTypeId">The Id of the object type.</param>
+		/// <param name="objectId">The Id of the object.</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <returns>The ObjectVersion, if it is visible to the user.</returns>
+		public Task<ExtendedObjectVersion> GetLatestObjectVersionAndPropertiesAsync(int objectTypeId, int objectId, CancellationToken token = default(CancellationToken))
+		{
+			// Execute the other overload.
+			return this.GetLatestObjectVersionAndPropertiesAsync(new ObjID()
+			{
+				ID = objectId,
+				Type = objectTypeId,
+			}, token);
+		}
+
+		/// <summary>
+		/// Retrieves the latest version of the specified object version.
+		/// </summary>
+		/// <param name="objId">The Id of the object.</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <returns>The ObjectVersion, if it is visible to the user.</returns>
+		public ExtendedObjectVersion GetLatestObjectVersionAndProperties(ObjID objId, CancellationToken token = default(CancellationToken))
+		{
+			// Execute the async method.
+			return this.GetLatestObjectVersionAndPropertiesAsync(objId, token)
+				.ConfigureAwait(false)
+				.GetAwaiter()
+				.GetResult();
+		}
+
+		/// <summary>
+		/// Retrieves the latest version of the specified object version.
+		/// </summary>
+		/// <param name="objId">The Id of the object.</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <returns>The ObjectVersion, if it is visible to the user.</returns>
+		public ExtendedObjectVersion GetLatestObjectVersionAndProperties(int objectTypeId, int objectId, CancellationToken token = default(CancellationToken))
+		{
+			// Execute the other overload.
+			return this.GetLatestObjectVersionAndProperties(new ObjID()
+			{
+				ID = objectId,
+				Type = objectTypeId,
+			}, token);
+		}
+
+		#endregion
+
 		#region Creating new objects
 
 		/// <summary>
@@ -33,7 +219,6 @@ namespace MFaaP.MFWSClient
 		/// <returns>Information on the created object.</returns>
 		public async Task<ObjectVersion> CreateNewObjectAsync(int objectTypeId, ObjectCreationInfo creationInfo, CancellationToken token = default(CancellationToken))
 		{
-
 			// Sanity.
 			if (null == creationInfo)
 				throw new ArgumentNullException();
@@ -101,7 +286,6 @@ namespace MFaaP.MFWSClient
 		public Task<ObjectVersion> SetCheckoutStatusAsync(int objectTypeId, int objectId, MFCheckOutStatus status, int? version = null,
 			CancellationToken token = default(CancellationToken))
 		{
-
 			// Sanity.
 			if (objectTypeId < 0)
 				throw new ArgumentException("The object type id cannot be less than zero");
@@ -143,24 +327,26 @@ namespace MFaaP.MFWSClient
 		/// <param name="status">The checkout status.</param>
 		/// <param name="token">A cancellation token for the request.</param>
 		/// <returns>A representation of the checked-in object version/</returns>
-		public async Task<ObjectVersion> SetCheckoutStatusAsync(ObjID objId, MFCheckOutStatus status, int? version = null,
+		public Task<ObjectVersion> SetCheckoutStatusAsync(ObjID objId, MFCheckOutStatus status, int? version = null,
 			CancellationToken token = default(CancellationToken))
 		{
-
 			// Sanity.
 			if (null == objId)
 				throw new ArgumentNullException(nameof(objId));
 
-			// Create the request.
-			var request = new RestRequest($"/REST/objects/{objId.Type}/{objId.ID}/{version?.ToString() ?? "latest"}/checkedout");
-			request.AddJsonBody(new PrimitiveType<MFCheckOutStatus>() { Value = status });
-
-			// Make the request and get the response.
-			var response = await this.MFWSClient.Put<ObjectVersion>(request, token)
-				.ConfigureAwait(false);
-
-			// Return the data.
-			return response.Data;
+			// Use the other overload.
+			return this.SetCheckoutStatusAsync(new ObjVer()
+				{
+					Version = version ?? -1,
+					ID = objId.ID,
+					Type = objId.Type,
+					VersionType =  version >= 0 ? MFObjVerVersionType.Specific : MFObjVerVersionType.Latest,
+					ExternalRepositoryObjectID = objId.ExternalRepositoryObjectID,
+					ExternalRepositoryName = objId.ExternalRepositoryName,
+					ExternalRepositoryObjectVersionID = null
+				},
+				status,
+				token);
 		}
 
 		/// <summary>
@@ -190,14 +376,18 @@ namespace MFaaP.MFWSClient
 		/// <returns>A representation of the checked-in object version/</returns>
 		public async Task<ObjectVersion> SetCheckoutStatusAsync(ObjVer objVer, MFCheckOutStatus status, CancellationToken token = default(CancellationToken))
 		{
-
 			// Sanity.
 			if (null == objVer)
 				throw new ArgumentNullException(nameof(objVer));
 
+			// Extract the URI elements.
+			int objectTypeId;
+			string objectId, objectVersionId;
+			objVer.GetUriParameters(out objectTypeId, out objectId, out objectVersionId);
+
 			// Create the request.
-			var request = new RestRequest($"/REST/objects/{objVer.Type}/{objVer.ID}/{objVer.Version}/checkedout");
-			request.AddJsonBody(status);
+			var request = new RestRequest($"/REST/objects/{objectTypeId}/{objectId}/{objectVersionId}/checkedout");
+			request.AddJsonBody(new PrimitiveType<MFCheckOutStatus>() { Value = status });
 
 			// Make the request and get the response.
 			var response = await this.MFWSClient.Put<ObjectVersion>(request, token)
@@ -284,22 +474,23 @@ namespace MFaaP.MFWSClient
 		/// <param name="version">The version (or null for latest).</param>
 		/// <param name="token">A cancellation token for the request.</param>
 		/// <returns>A representation of the checked-in object version/</returns>
-		public async Task<MFCheckOutStatus?> GetCheckoutStatusAsync(ObjID objId, int? version = null, CancellationToken token = default(CancellationToken))
+		public Task<MFCheckOutStatus?> GetCheckoutStatusAsync(ObjID objId, int? version = null, CancellationToken token = default(CancellationToken))
 		{
-
 			// Sanity.
 			if (null == objId)
 				throw new ArgumentNullException(nameof(objId));
 
-			// Create the request.
-			var request = new RestRequest($"/REST/objects/{objId.Type}/{objId.ID}/{version?.ToString() ?? "latest"}/checkedout");
-
-			// Make the request and get the response.
-			var response = await this.MFWSClient.Get<PrimitiveType<MFCheckOutStatus>>(request, token)
-				.ConfigureAwait(false);
-
-			// Return the data.
-			return response.Data?.Value;
+			// Use the other overload.
+			return this.GetCheckoutStatusAsync(new ObjVer()
+			{
+				ID = objId.ID,
+				Type = objId.Type,
+				Version = -1,
+				VersionType = MFObjVerVersionType.Latest,
+				ExternalRepositoryObjectID = objId.ExternalRepositoryObjectID,
+				ExternalRepositoryName = objId.ExternalRepositoryName,
+				ExternalRepositoryObjectVersionID = null
+			}, token);
 		}
 
 		/// <summary>
@@ -326,13 +517,20 @@ namespace MFaaP.MFWSClient
 		/// <returns>A representation of the checked-in object version/</returns>
 		public async Task<MFCheckOutStatus?> GetCheckoutStatusAsync(ObjVer objVer, CancellationToken token = default(CancellationToken))
 		{
-
 			// Sanity.
 			if (null == objVer)
 				throw new ArgumentNullException(nameof(objVer));
 
 			// Create the request.
-			var request = new RestRequest($"/REST/objects/{objVer.Type}/{objVer.ID}/{objVer.Version}/checkedout");
+			string id = objVer.ID == 0
+						&& false == string.IsNullOrWhiteSpace(objVer.ExternalRepositoryName)
+						&& false == string.IsNullOrWhiteSpace(objVer.ExternalRepositoryObjectID)
+				? $"u{WebUtility.UrlEncode(objVer.ExternalRepositoryName)}:{WebUtility.UrlEncode(objVer.ExternalRepositoryObjectID)}" // External object.
+				: objVer.ID.ToString(); // Internal object.
+			string version = objVer.ID > 0
+				? (objVer.Version > 0 ? objVer.Version.ToString() : "latest") // Internal object.
+				: string.IsNullOrWhiteSpace(objVer.ExternalRepositoryObjectVersionID) ? "latest" : WebUtility.UrlEncode(objVer.ExternalRepositoryObjectVersionID); // External object.
+			var request = new RestRequest($"/REST/objects/{objVer.Type}/{id}/{version}/checkedout");
 
 			// Make the request and get the response.
 			var response = await this.MFWSClient.Get<PrimitiveType<MFCheckOutStatus>>(request, token)
@@ -431,7 +629,7 @@ namespace MFaaP.MFWSClient
 				throw new ArgumentNullException(nameof(objVer));
 
 			// Execute the async method.
-			return this.CheckOutAsync(objVer.Type, objVer.ID, objVer.Version, token)
+			return this.CheckOutAsync(objVer, token)
 				.ConfigureAwait(false)
 				.GetAwaiter()
 				.GetResult();
@@ -491,7 +689,7 @@ namespace MFaaP.MFWSClient
 			if (null == objVer)
 				throw new ArgumentNullException(nameof(objVer));
 
-			return this.SetCheckoutStatusAsync(objVer.Type, objVer.ID, MFCheckOutStatus.CheckedIn, objVer.Version, token);
+			return this.SetCheckoutStatusAsync(objVer, MFCheckOutStatus.CheckedIn, token);
 		}
 
 		/// <summary>
@@ -507,7 +705,7 @@ namespace MFaaP.MFWSClient
 				throw new ArgumentNullException(nameof(objVer));
 
 			// Execute the async method.
-			return this.CheckInAsync(objVer.Type, objVer.ID, objVer.Version, token)
+			return this.CheckInAsync(objVer, token)
 				.ConfigureAwait(false)
 				.GetAwaiter()
 				.GetResult();
@@ -759,8 +957,13 @@ namespace MFaaP.MFWSClient
 			if (null == objId)
 				throw new ArgumentNullException(nameof(objId));
 
+			// Extract the URI elements.
+			int objectTypeId;
+			string objectId;
+			objId.GetUriParameters(out objectTypeId, out objectId);
+
 			// Create the request.
-			var request = new RestRequest($"/REST/objects/{objId.Type}/{objId.ID}/deleted");
+			var request = new RestRequest($"/REST/objects/{objectTypeId}/{objectId}/deleted");
 
 			// Make the request and get the response.
 			var response = await this.MFWSClient.Get<PrimitiveType<bool>>(request, token)
@@ -801,8 +1004,13 @@ namespace MFaaP.MFWSClient
 			if (null == objId)
 				throw new ArgumentNullException(nameof(objId));
 
+			// Extract the URI elements.
+			int objectTypeId;
+			string objectId;
+			objId.GetUriParameters(out objectTypeId, out objectId);
+
 			// Create the request.
-			var request = new RestRequest($"/REST/objects/{objId.Type}/{objId.ID}/deleted");
+			var request = new RestRequest($"/REST/objects/{objectTypeId}/{objectId}/deleted");
 			request.Method = Method.PUT;
 
 			// Add the body.
@@ -867,8 +1075,13 @@ namespace MFaaP.MFWSClient
 			if (null == objId)
 				throw new ArgumentNullException(nameof(objId));
 
+			// Extract the URI elements.
+			int objectTypeId;
+			string objectId;
+			objId.GetUriParameters(out objectTypeId, out objectId);
+
 			// Create the request.
-			var request = new RestRequest($"/REST/objects/{objId.Type}/{objId.ID}/deleted");
+			var request = new RestRequest($"/REST/objects/{objectTypeId}/{objectId}/deleted");
 			request.Method = Method.PUT;
 			
 			// Add the body.
@@ -919,7 +1132,7 @@ namespace MFaaP.MFWSClient
 
 		#endregion
 
-		#region Destroying objects.
+		#region Destroying objects
 
 		/// <summary>
 		/// Destroys all versions of an object.

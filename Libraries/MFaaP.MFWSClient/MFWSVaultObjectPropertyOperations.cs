@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using RestSharp;
@@ -22,7 +23,7 @@ namespace MFaaP.MFWSClient
 		{
 		}
 
-		#region Get properties of objects
+		#region Get properties of multiple objects
 
 		/// <summary>
 		/// Retrieves the properties of multiple objects.
@@ -59,9 +60,14 @@ namespace MFaaP.MFWSClient
 			// Sanity.
 			if (null == objVers || objVers.Length == 0)
 				return new PropertyValue[0][];
+			foreach (var objVer in objVers)
+			{
+				if (objVer.Version < 1)
+					throw new ArgumentException("The object version must be greater than zero.");
+			}
 
 			// Create the request.
-			var request = new RestRequest("/REST/objects/properties");
+			var request = new RestRequest("/REST/objects/properties.aspx");
 
 			// Add the body.
 			request.AddJsonBody(objVers);
@@ -91,27 +97,71 @@ namespace MFaaP.MFWSClient
 
 		}
 
+		#endregion
+
+		#region Get properties of single objects
+
 		/// <summary>
-		/// Retrieves the properties of a single object.
+		/// Retrieves the properties of a single object.  Returns the properties on the latest version of the object.
 		/// </summary>
-		/// <param name="objVer">The object to retrieve the properties of.</param>
+		/// <param name="objectTypeId">The Id of the object type.</param>
+		/// <param name="objectId">The Id of the object.</param>
+		/// <param name="version">The version (or null for latest).</param>
 		/// <param name="token">A cancellation token for the request.</param>
 		/// <returns>A collection of property values for the supplied object.</returns>
-		public async Task<PropertyValue[]> GetPropertiesAsync(ObjVer objVer, CancellationToken token = default(CancellationToken))
+		public PropertyValue[] GetProperties(int objectTypeId, int objectId, int? version = null, CancellationToken token = default(CancellationToken))
 		{
+			// Execute the async method.
+			return this.GetPropertiesAsync(objectTypeId, objectId, version, token)
+				.ConfigureAwait(false)
+				.GetAwaiter()
+				.GetResult();
+		}
 
-			// Sanity.
-			if (null == objVer)
-				throw new ArgumentNullException(nameof(objVer));
+		/// <summary>
+		/// Retrieves the properties of a single object.  Returns the properties on the latest version of the object.
+		/// </summary>
+		/// <param name="objectTypeId">The Id of the object type.</param>
+		/// <param name="objectId">The Id of the object.</param>
+		/// <param name="version">The version (or null for latest).</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <returns>A collection of property values for the supplied object.</returns>
+		public Task<PropertyValue[]> GetPropertiesAsync(int objectTypeId, int objectId, int? version = null, CancellationToken token = default(CancellationToken))
+		{
+			// Use the other method.
+			return this.GetPropertiesAsync(new ObjVer()
+			{
+				Type = objectTypeId,
+				ID = objectId,
+				Version = version ?? -1
+			}, token);
+		}
 
-			// Use the other overload to retrieve the content.
-			var response = await this.GetPropertiesOfMultipleObjectsAsync(token, new[] { objVer })
-				.ConfigureAwait(false);
+		/// <summary>
+		/// Retrieves the properties of a single object.  Returns the properties on the latest version of the object.
+		/// </summary>
+		/// <param name="objID">The object to retrieve the properties of.</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <returns>A collection of property values for the supplied object.</returns>
+		public PropertyValue[] GetProperties(ObjID objID, CancellationToken token = default(CancellationToken))
+		{
+			// Execute the async method.
+			return this.GetPropertiesAsync(objID, token)
+				.ConfigureAwait(false)
+				.GetAwaiter()
+				.GetResult();
+		}
 
-			// Sanity.
-			return null != response && response.Length > 0
-				? response[0]
-				: new PropertyValue[0];
+		/// <summary>
+		/// Retrieves the properties of a single object.  Returns the properties on the latest version of the object.
+		/// </summary>
+		/// <param name="objID">The object to retrieve the properties of.</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <returns>A collection of property values for the supplied object.</returns>
+		public Task<PropertyValue[]> GetPropertiesAsync(ObjID objID, CancellationToken token = default(CancellationToken))
+		{
+			// Use the other method.
+			return this.GetPropertiesAsync(objID.Type, objID.ID, version: null, token: token);
 		}
 
 		/// <summary>
@@ -127,6 +177,36 @@ namespace MFaaP.MFWSClient
 				.ConfigureAwait(false)
 				.GetAwaiter()
 				.GetResult();
+		}
+
+		/// <summary>
+		/// Retrieves the properties of a single object.
+		/// </summary>
+		/// <param name="objVer">The object to retrieve the properties of.</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <returns>A collection of property values for the supplied object.</returns>
+		public async Task<PropertyValue[]> GetPropertiesAsync(ObjVer objVer, CancellationToken token = default(CancellationToken))
+		{
+			// Sanity.
+			if (null == objVer)
+				throw new ArgumentNullException(nameof(objVer));
+
+			// Extract the URI elements.
+			int objectTypeId;
+			string objectId, objectVersionId;
+			objVer.GetUriParameters(out objectTypeId, out objectId, out objectVersionId);
+
+			// Create the request.
+			string resource = $"/REST/objects/{objectTypeId}/{objectId}/{objectVersionId}/properties.aspx";
+
+			var request = new RestRequest(resource);
+
+			// Make the request and get the response.
+			var response = await this.MFWSClient.Get<List<PropertyValue>>(request, token)
+				.ConfigureAwait(false);
+
+			// Return the data.
+			return response.Data?.ToArray();
 		}
 
 		#endregion
@@ -375,6 +455,57 @@ namespace MFaaP.MFWSClient
 		{
 			// Execute the async method.
 			return this.SetPropertiesAsync(objId, propertyValues, replaceAllProperties, token)
+				.ConfigureAwait(false)
+				.GetAwaiter()
+				.GetResult();
+		}
+
+		#endregion
+
+		#region Set properties of multiple objects at once
+
+		/// <summary>
+		/// Sets the properties of multiple objects in one HTTP request.
+		/// </summary>
+		/// <param name="objectVersionUpdateInformation">Information on the objects to promote.</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <remarks>Will also promote objects if they are external and a class property value is provided (see <see cref="MFWSVaultExternalObjectOperations.PromoteObjectsAsync"/>).</remarks>
+		public async Task<List<ExtendedObjectVersion>> SetPropertiesOfMultipleObjectsAsync(CancellationToken token = default(CancellationToken), params ObjectVersionUpdateInformation[] objectVersionUpdateInformation)
+		{
+			// Sanity.
+			if (null == objectVersionUpdateInformation)
+				throw new ArgumentNullException(nameof(objectVersionUpdateInformation));
+			if (objectVersionUpdateInformation.Length == 0)
+				return new List<ExtendedObjectVersion>();
+
+			// Create the request.
+			var request = new RestRequest($"/REST/objects/setmultipleobjproperties");
+
+			// Create the request body.
+			var body = new ObjectsUpdateInfo();
+			body.MultipleObjectInfo.AddRange(objectVersionUpdateInformation);
+
+			// Set the request body.
+			request.AddJsonBody(body);
+
+			// Make the request and get the response.
+			var response = await this.MFWSClient.Put<List<ExtendedObjectVersion>>(request, token)
+				.ConfigureAwait(false);
+
+			// Return the object data.
+			return response.Data;
+		}
+
+		/// <summary>
+		/// Promotes unmanaged objects to managed object.
+		/// </summary>
+		/// <param name="objectVersionUpdateInformation">Information on the objects to promote.</param>
+		/// <param name="token">A cancellation token for the request.</param>
+		/// <remarks>The property values must be valid for the class, as they would if an object were being created.</remarks>
+		public List<ExtendedObjectVersion> SetPropertiesOfMultipleObjects(CancellationToken token = default(CancellationToken), params ObjectVersionUpdateInformation[] objectVersionUpdateInformation)
+		{
+			// Execute the async method.
+			return this.SetPropertiesOfMultipleObjectsAsync(token, objectVersionUpdateInformation)
 				.ConfigureAwait(false)
 				.GetAwaiter()
 				.GetResult();

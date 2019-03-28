@@ -34,6 +34,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 #if !WINDOWS_UWP
 using System.Web;
 #endif
@@ -43,8 +44,370 @@ using System.Web;
 
 namespace MFaaP.MFWSClient
 {
+	/// <summary>
+	/// Based on the M-Files API.
+	/// </summary>
+	/// <remarks>ref: https://www.m-files.com/api/documentation/latest/index.html#MFilesAPI~MFBuiltInPropertyDef.html </remarks>
+	public enum MFBuiltInPropertyDef
+	{/// <summary>
+	 /// The last time the object was accessed by the current user.
+	 /// </summary>
+		MFBuiltInPropertyDefAccessedByMe = 81,
 
+		/// <summary>
+		/// The date and time of the last change to the ACL of the object version.
+		/// </summary>
+		MFBuiltInPropertyDefACLChanged = 90,
 
+		/// <summary>
+		/// A list of additional classes for the object.
+		/// </summary>
+		MFBuiltInPropertyDefAdditionalClasses = 36,
+
+		/// <summary>
+		/// A list of users to whom the object version is assigned.
+		/// </summary>
+		MFBuiltInPropertyDefAssignedTo = 44,
+
+		/// <summary>
+		/// The assignment description for the current object version assignment.
+		/// </summary>
+		MFBuiltInPropertyDefAssignmentDescription = 41,
+
+		/// <summary>
+		/// The class of the object.
+		/// </summary>
+		MFBuiltInPropertyDefClass = 100,
+
+		/// <summary>
+		/// The class group of the object.
+		/// </summary>
+		MFBuiltInPropertyDefClassGroups = 101,
+
+		/// <summary>
+		/// A list of document collections belonging to the document collection.
+		/// </summary>
+		MFBuiltInPropertyDefCollectionMemberCollections = 47,
+
+		/// <summary>
+		/// A list of documents belonging to the document collection.
+		/// </summary>
+		MFBuiltInPropertyDefCollectionMemberDocuments = 46,
+
+		/// <summary>
+		/// Comment text for the object version. Same as MFBuiltInPropertyDefVersionComment.
+		/// </summary>
+		MFBuiltInPropertyDefComment = 33,
+
+		/// <summary>
+		/// Specifies whether or not the assignment has been completed.
+		/// </summary>
+		MFBuiltInPropertyDefCompleted = 98,
+
+		/// <summary>
+		/// A list of users who have completed the current assignment.
+		/// </summary>
+		MFBuiltInPropertyDefCompletedBy = 45,
+
+		/// <summary>
+		/// The date and time a conflict was last resolved in favor of the object.
+		/// </summary>
+		MFBuiltInPropertyDefConflictResolved = 96,
+
+		/// <summary>
+		/// Constituent documents for the current object.
+		/// </summary>
+		MFBuiltInPropertyDefConstituent = 48,
+
+		/// <summary>
+		/// The creation date and time of an object.
+		/// </summary>
+		MFBuiltInPropertyDefCreated = 20,
+
+		/// <summary>
+		/// Identifies the user who created the object.
+		/// </summary>
+		MFBuiltInPropertyDefCreatedBy = 25,
+
+		/// <summary>
+		/// The external source from which the object was imported.
+		/// </summary>
+		MFBuiltInPropertyDefCreatedFromExternalLocation = 35,
+
+		/// <summary>
+		/// The deadline date for the current object version assignment.
+		/// </summary>
+		MFBuiltInPropertyDefDeadline = 42,
+
+		/// <summary>
+		/// The deletion date and time of the object.
+		/// </summary>
+		MFBuiltInPropertyDefDeleted = 27,
+
+		/// <summary>
+		/// Identifies the user who deleted the object.
+		/// </summary>
+		MFBuiltInPropertyDefDeletedBy = 28,
+
+		/// <summary>
+		/// The date and time of the last change to the deletion status of the object.
+		/// </summary>
+		MFBuiltInPropertyDefDeletionStatusChanged = 93,
+
+		/// <summary>
+		/// The 'favorite views' where the object should be shown.
+		/// </summary>
+		MFBuiltInPropertyDefFavoriteView = 82,
+
+		/// <summary>
+		/// E-mail in-reply-to internet header value.
+		/// </summary>
+		MFBuiltInPropertyDefInReplyTo = 84,
+
+		/// <summary>
+		/// E-mail in-reply-to references between documents belonging to the same conversation.
+		/// </summary>
+		MFBuiltInPropertyDefInReplyToReference = 85,
+
+		/// <summary>
+		/// A Boolean property identifying whether the object is a template.
+		/// </summary>
+		MFBuiltInPropertyDefIsTemplate = 37,
+
+		/// <summary>
+		/// Keywords for the object.
+		/// </summary>
+		MFBuiltInPropertyDefKeywords = 26,
+
+		/// <summary>
+		/// The last modification date and time of an object.
+		/// </summary>
+		MFBuiltInPropertyDefLastModified = 21,
+
+		/// <summary>
+		/// Identifies the user who performed the last modification for the object.
+		/// </summary>
+		MFBuiltInPropertyDefLastModifiedBy = 23,
+
+		/// <summary>
+		/// The location in a repository.
+		/// </summary>
+		MFBuiltInPropertyDefLocation = 103,
+
+		/// <summary>
+		/// A Boolean property identifying whether the object is marked for archiving.
+		/// </summary>
+		MFBuiltInPropertyDefMarkedForArchiving = 32,
+
+		/// <summary>
+		/// E-mail message-id from internet headers.
+		/// </summary>
+		MFBuiltInPropertyDefMessageID = 83,
+
+		/// <summary>
+		/// A list of users who are monitoring the current assignment.
+		/// </summary>
+		MFBuiltInPropertyDefMonitoredBy = 43,
+
+		/// <summary>
+		/// The name or title property definition.
+		/// </summary>
+		MFBuiltInPropertyDefNameOrTitle = 0,
+
+		/// <summary>
+		/// The date and time of the last change to the object.
+		/// </summary>
+		MFBuiltInPropertyDefObjectChanged = 89,
+
+		/// <summary>
+		/// This special value is used for referring to Object ID in ObjectTypeColumnMapping.TargetPropertyDef.
+		/// </summary>
+		MFBuiltInPropertyDefObjectID = -102,
+
+		/// <summary>
+		/// The location from which the object was imported to M-Files.
+		/// </summary>
+		MFBuiltInPropertyDefOriginalPath = 75,
+
+		/// <summary>
+		/// The location from which the object was imported to M-Files (continued).
+		/// </summary>
+		MFBuiltInPropertyDefOriginalPath2 = 77,
+
+		/// <summary>
+		/// The location from which the object was imported to M-Files (continued).
+		/// </summary>
+		MFBuiltInPropertyDefOriginalPath3 = 78,
+
+		/// <summary>
+		/// A list of referenced documents.
+		/// </summary>
+		MFBuiltInPropertyDefReference = 76,
+
+		/// <summary>
+		/// A list of users who have rejected the current assignment.
+		/// </summary>
+		MFBuiltInPropertyDefRejectedBy = 97,
+
+		/// <summary>
+		/// Report placement.
+		/// </summary>
+		MFBuiltInPropertyDefReportPlacement = 88,
+
+		/// <summary>
+		/// Report URL.
+		/// </summary>
+		MFBuiltInPropertyDefReportURL = 87,
+
+		/// <summary>
+		/// The repository of an object.
+		/// </summary>
+		MFBuiltInPropertyDefRepository = 102,
+
+		/// <summary>
+		/// The shared location paths of the object's shared files.
+		/// </summary>
+		MFBuiltInPropertyDefSharedFiles = 95,
+
+		/// <summary>
+		/// Signature manifestation.
+		/// </summary>
+		MFBuiltInPropertyDefSignatureManifestation = 86,
+
+		/// <summary>
+		/// A Boolean property identifying whether the object is a single-file object.
+		/// </summary>
+		MFBuiltInPropertyDefSingleFileObject = 22,
+
+		/// <summary>
+		/// The total size of all object versions.
+		/// </summary>
+		MFBuiltInPropertyDefSizeOnServerAllVersions = 31,
+
+		/// <summary>
+		/// The size of this object version.
+		/// </summary>
+		MFBuiltInPropertyDefSizeOnServerThisVersion = 30,
+
+		/// <summary>
+		/// The workflow state of the object.
+		/// </summary>
+		MFBuiltInPropertyDefState = 39,
+
+		/// <summary>
+		/// The date when the object state was changed to the current state.
+		/// </summary>
+		MFBuiltInPropertyDefStateEntered = 40,
+
+		/// <summary>
+		/// The workflow state transition of the object.
+		/// </summary>
+		MFBuiltInPropertyDefStateTransition = 99,
+
+		/// <summary>
+		/// The date and time of the last status change of the object.
+		/// </summary>
+		MFBuiltInPropertyDefStatusChanged = 24,
+
+		/// <summary>
+		/// A traditional folder containing this object version.
+		/// </summary>
+		MFBuiltInPropertyDefTraditionalFolder = 34,
+
+		/// <summary>
+		/// The GUID of the vault that contains or contained the object to which the shortcut object refers to.
+		/// </summary>
+		MFBuiltInPropertyDefVaultGUID = 94,
+
+		/// <summary>
+		/// Comment text for the object version. Same as MFBuiltInPropertyDefComment.
+		/// </summary>
+		MFBuiltInPropertyDefVersionComment = 33,
+
+		/// <summary>
+		/// The date and time of the last change to the comment of the object version.
+		/// </summary>
+		MFBuiltInPropertyDefVersionCommentChanged = 92,
+
+		/// <summary>
+		/// The version label for the object.
+		/// </summary>
+		MFBuiltInPropertyDefVersionLabel = 29,
+
+		/// <summary>
+		/// The date and time of the last change to the version label of the object version.
+		/// </summary>
+		MFBuiltInPropertyDefVersionLabelChanged = 91,
+
+		/// <summary>
+		/// The workflow for the object.
+		/// </summary>
+		MFBuiltInPropertyDefWorkflow = 38,
+
+		/// <summary>
+		/// A property which indicates the assignment related to the workflow of the object.
+		/// </summary>
+		MFBuiltInPropertyDefWorkflowAssignment = 79
+
+	}
+
+	/// <summary>
+	/// Based on the M-Files API.
+	/// </summary>
+	/// <remarks>ref: https://www.m-files.com/api/documentation/latest/index.html#MFilesAPI~MFBuiltInDocumentClass.html </remarks>
+	public enum MFBuiltInDocumentClass
+	{
+		/// <summary>
+		/// Document.
+		/// </summary>
+		MFBuiltInDocumentClassUnclassifiedDocument = 0,
+
+		/// <summary>
+		/// Other document.
+		/// </summary>
+		MFBuiltInDocumentClassOtherDocument = 1
+	}
+
+	/// <summary>
+	/// Based on the M-Files API.
+	/// </summary>
+	public enum MFBuiltInView
+	{
+		/// <summary>
+		/// Checked-out-to-me view.
+		/// </summary>
+		MFBuiltInViewCheckedOutToCurrentUser = 5,
+
+		/// <summary>
+		/// Recently-modified-by-me view.
+		/// </summary>
+		MFBuiltInViewRecentlyModifiedByMe = 7,
+
+		/// <summary>
+		/// Templates view.
+		/// </summary>
+		MFBuiltInViewTemplates = 8,
+
+		/// <summary>
+		/// Assigned-to-me view.
+		/// </summary>
+		MFBuiltInViewAssignedToMe = 9,
+
+		/// <summary>
+		/// Latest-searches view container.
+		/// </summary>
+		MFBuiltInViewLatestSearches = 11,
+
+		/// <summary>
+		/// Recently Accessed by Me view.
+		/// </summary>
+		MFBuiltInViewRecentlyAccessedByMe = 14,
+
+		/// <summary>
+		/// Favorites view.
+		/// </summary>
+		MFBuiltInViewFavorites = 15
+	}
 
 	/// <summary>
 	/// Specifies the information required when creating a new object.
@@ -195,6 +558,86 @@ namespace MFaaP.MFWSClient
 		/// Based on M-Files API.
 		/// </summary>
 		public int Version { get; set; }
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public string ExternalRepositoryFileID { get; set; }
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public string ExternalRepositoryFileVersionID { get; set; }
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		/// <remarks>ref: https://www.m-files.com/api/documentation/latest/index.html#MFilesAPI~FileVer~Type.html </remarks>
+		public MFFileVerVersionType FileVersionType { get; set; }
+
+		/// <summary>
+		/// Retrieves the URI parameters for the current <see cref="ObjID"/>.
+		/// </summary>
+		/// <param name="fileId">The ID of the file.</param>
+		/// <param name="fileVersionId">The version of the file.</param>
+		public void GetUriParameters(out string fileId, out string fileVersionId)
+		{
+			// If we have an internal ID then we will return internal data.
+			if (this.ID > 0)
+			{
+				fileId = this.ID.ToString();
+				fileVersionId = this.Version > 0
+					? this.Version.ToString()
+					: "latest";
+				return;
+			}
+
+			// The file ID is:
+			//		The letter "u",
+			//		The external file ID (URI-encoded).
+			//	This entire string is then URI-encoded again.
+			fileId = WebUtility.UrlEncode($"u{WebUtility.UrlEncode(this.ExternalRepositoryFileID)}");
+
+			// If we don't have an external version then use latest.
+			if (string.IsNullOrWhiteSpace(this.ExternalRepositoryFileVersionID))
+			{
+				fileVersionId = "latest";
+				return;
+			}
+
+			// The version ID is:
+			//		The letter "u",
+			//		The external file version ID (URI-encoded).
+			//	This entire string is then URI-encoded again.
+			fileVersionId = WebUtility.UrlEncode($"u{WebUtility.UrlEncode(this.ExternalRepositoryFileVersionID)}");
+
+		}
+	}
+
+	/// <summary>
+	/// Base on M-Files API.
+	/// </summary>
+	public enum MFFileVerVersionType
+	{
+		/// <summary>
+		/// A non-initialized version.
+		/// </summary>
+		MFFileVerVersionTypeUninitialized = 0,
+
+		/// <summary>
+		/// A version that represents the latest file version.
+		/// </summary>
+		MFFileVerVersionTypeLatest = 1,
+
+		/// <summary>
+		/// A version that represents any file version.
+		/// </summary>
+		MFFileVerVersionTypeAny = 2,
+
+		/// <summary>
+		/// A version that represents a reference to a specific version.
+		/// </summary>
+		MFFileVerVersionTypeSpecific = 3
 	}
 
 
@@ -1092,6 +1535,7 @@ namespace MFaaP.MFWSClient
     /// Based on M-Files API.
     /// </summary>
     public class ObjectFile
+		: FileVer
 	{
 
 		public ObjectFile()
@@ -1110,11 +1554,6 @@ namespace MFaaP.MFWSClient
         /// When returned from the server it does not include the "." prefix.
         /// </remarks>
         public string Extension { get; set; }
-        
-        /// <summary>
-        /// Based on M-Files API.
-        /// </summary>
-        public int ID { get; set; }
 
 		/// <summary>
 		/// Based on M-Files API.
@@ -1132,11 +1571,6 @@ namespace MFaaP.MFWSClient
 		/// <summary>
 		/// Based on M-Files API.
 		/// </summary>
-		public int Version { get; set; }
-
-		/// <summary>
-		/// Based on M-Files API.
-		/// </summary>
 		/// <remarks>M-Files API uses LogicalSize.</remarks>
 		public long Size { get; set; }
 
@@ -1144,14 +1578,25 @@ namespace MFaaP.MFWSClient
 		/// Based on M-Files API.
 		/// </summary>
 		public string FileGUID { get; set; }
+
+		/// <summary>
+		/// Converts the file version into a <see cref="FileVer"/>.
+		/// </summary>
+		/// <returns>The file version information.</returns>
+		public FileVer AsFileVer()
+		{
+			return (FileVer) this;
+		}
+
 	}
 
-    
 
-    /// <summary>
-    /// Based on M-Files API.
-    /// </summary>
-    public class ObjVer
+
+	/// <summary>
+	/// Based on M-Files API.
+	/// </summary>
+	public class ObjVer
+	: ObjID
 	{
 
 		public ObjVer()
@@ -1161,26 +1606,89 @@ namespace MFaaP.MFWSClient
 		/// <summary>
 		/// Based on M-Files API.
 		/// </summary>
-		public int ID { get; set; }
-        
-        /// <summary>
-        /// Based on M-Files API.
-        /// </summary>
-        public int Type { get; set; }
-        
-        /// <summary>
-        /// Based on M-Files API.
-        /// </summary>
-        public int Version { get; set; }
-        
-    }
+		public int Version { get; set; }
 
-    
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public string ExternalRepositoryObjectVersionID { get; set; }
 
-    /// <summary>
-    /// Based on M-Files API.
-    /// </summary>
-    public class PropertyValue
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public MFObjVerVersionType VersionType { get; set; }
+
+		/// <summary>
+		/// Retrieves the URI parameters for the current <see cref="ObjID"/>.
+		/// </summary>
+		/// <param name="objectTypeId">The ID of the object type.</param>
+		/// <param name="objectId">The ID of the object.</param>
+		/// <param name="objectVersionId">The ID of the object version.</param>
+		public void GetUriParameters(out int objectTypeId, out string objectId, out string objectVersionId)
+		{
+			// Use the base implementation to get the type and object IDs.
+			base.GetUriParameters(out objectTypeId, out objectId);
+			
+			// If it has an internal ID and is a document then treat it as an M-Files object (promoted or native).
+			if (this.ID > 0 || this.Type != 0)
+			{
+				// If we have a version then use it, otherwise return "latest".
+				objectVersionId = this.Version > 0
+					? this.Version.ToString()
+					: "latest";
+				return;
+			}
+
+			// If we don't have an external version then use latest.
+			if (string.IsNullOrWhiteSpace(this.ExternalRepositoryObjectVersionID))
+			{
+				objectVersionId = "latest";
+				return;
+			}
+
+			// The version ID is:
+			//		The letter "u",
+			//		The external object version ID (URI-encoded).
+			//	This entire string is then URI-encoded again.
+			objectVersionId = WebUtility.UrlEncode($"u{WebUtility.UrlEncode(this.ExternalRepositoryObjectVersionID)}");
+		}
+	}
+
+	/// <summary>
+	/// Based on M-Files API.
+	/// </summary>
+	public enum MFObjVerVersionType
+	{
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		All = 3,
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		Any = 2,
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		Latest = 1,
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		Specific = 4,
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		Uninitialized = 0
+	}
+
+	/// <summary>
+	/// Based on M-Files API.
+	/// </summary>
+	public class PropertyValue
 	{
 		public PropertyValue()
 		{
@@ -1432,7 +1940,7 @@ namespace MFaaP.MFWSClient
         /// <summary>
         /// Based on M-Files API.
         /// </summary>
-        public Ownerpropertydef OwnerPropertyDef { get; set; }
+        public OwnerPropertyDef OwnerPropertyDef { get; set; }
 
         /// <summary>
         /// Based on M-Files API.
@@ -1592,8 +2100,55 @@ namespace MFaaP.MFWSClient
         /// Based on M-Files API.
         /// </summary>
         public int Type { get; set; }
-        
-    }
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public string ExternalRepositoryName { get; set; }
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public string ExternalRepositoryObjectID { get; set; }
+
+		/// <summary>
+		/// Retrieves the URI parameters for the current <see cref="ObjID"/>.
+		/// </summary>
+		/// <param name="objectTypeId">The ID of the object type.</param>
+		/// <param name="objectId">The ID of the object.</param>
+		public void GetUriParameters(out int objectTypeId, out string objectId)
+		{
+			// This one is easy.
+			objectTypeId = this.Type;
+
+			// If it has an internal ID then use that.
+			// NOTE: We currently only support unmanaged documents, so we can short-cut if it's not a document.
+			if (this.ID > 0 || this.Type != 0)
+			{
+				objectId = this.ID.ToString();
+				return;
+			}
+
+			// If the external repository name or object ID are blank then throw.
+			if (string.IsNullOrWhiteSpace(this.ExternalRepositoryName)
+				|| string.IsNullOrWhiteSpace(this.ExternalRepositoryObjectID))
+			{
+				throw new InvalidOperationException("The ObjID has neither an internal ID nor external repository data.");
+			}
+
+			// The object ID is:
+			//		The letter "u",
+			//		The external repository name (URI-encoded),
+			//		The character ":",
+			//		The external repository object ID (URI-encoded).
+			//	This entire string is then URI-encoded again.
+			objectId = WebUtility.UrlEncode("u"
+											+ WebUtility.UrlEncode(this.ExternalRepositoryName)
+											+ ":"
+											+ WebUtility.UrlEncode(this.ExternalRepositoryObjectID));
+		}
+
+	}
 
     
 
@@ -1718,20 +2273,60 @@ namespace MFaaP.MFWSClient
         /// Based on M-Files API.
         /// </summary>
         public Lookup TraditionalFolder { get; set; }
-        
-        /// <summary>
-        /// Based on M-Files API.
-        /// </summary>
-        public View View { get; set; }
-        
-    }
 
-    
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public View View { get; set; }
 
-    /// <summary>
-    /// Based on M-Files API.
-    /// </summary>
-    public class View
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public ExternalView ExternalView { get; set; }
+
+	}
+
+	/// <summary>
+	/// Based on M-Files API.
+	/// </summary>
+	public class ExternalView
+	{
+
+		public ExternalView()
+		{
+		}
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public string DisplayName { get; set; }
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public string ExternalRepositoryName { get; set; }
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public string IconID { get; set; }
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public string ID { get; set; }
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public ObjectVersion ObjectData { get; set; }
+
+	}
+
+	/// <summary>
+	/// Based on M-Files API.
+	/// </summary>
+	public class View
 	{
 
 		public View()
@@ -1980,99 +2575,110 @@ namespace MFaaP.MFWSClient
 		
 	}
 
-    
+	/// <summary>
+	/// Based on M-Files API.
+	/// </summary>
+	/// <remarks>ref: https://www.m-files.com/api/documentation/latest/index.html#MFilesAPI~MFBuiltInObjectType.html</remarks>
+	public enum MFBuiltInObjectType
+	{
+		/// <summary>
+		/// The document object type.
+		/// </summary>
+		MFBuiltInObjectTypeDocument = 0,
+
+		/// <summary>
+		/// The document collection type.
+		/// </summary>
+		MFBuiltInObjectTypeDocumentCollection = 9,
+
+		/// <summary>
+		/// The assignment object type.
+		/// </summary>
+		MFBuiltInObjectTypeAssignment = 10,
+
+		/// <summary>
+		/// A special value that refers to both the document and the document collection types. Can be used in e.g. search conditions.
+		/// </summary>
+		MFBuiltInObjectTypeDocumentOrDocumentCollection = -102
+	}
+
 
 	/// <summary>
-	/// 
+	/// Based on M-Files API.
 	/// </summary>
 	public enum MFDataType
 	{
-
-
 		/// <summary>
-		/// 
+		/// Based on M-Files API.
 		/// </summary>
-		Uninitialized  = 0,
-		
+		Uninitialized = 0,
 
 		/// <summary>
-		/// 
+		/// Based on M-Files API.
 		/// </summary>
-		Text  = 1,
-		
+		Text = 1,
 
 		/// <summary>
-		/// 
+		/// Based on M-Files API.
 		/// </summary>
-		Integer  = 2,
-		
+		Integer = 2,
 
 		/// <summary>
-		/// 
+		/// Based on M-Files API.
 		/// </summary>
-		Floating  = 3,
-		
+		Floating = 3,
 
 		/// <summary>
-		/// 
+		/// Based on M-Files API.
 		/// </summary>
-		Date  = 5,
-		
+		Date = 5,
 
 		/// <summary>
-		/// 
+		/// Based on M-Files API.
 		/// </summary>
-		Time  = 6,
-		
+		Time = 6,
 
 		/// <summary>
-		/// 
+		/// Based on M-Files API.
 		/// </summary>
-		Timestamp  = 7,
+		Timestamp = 7,
 		
-
 		/// <summary>
-		/// 
+		/// The datatype of a boolean (true/false) property.
 		/// </summary>
 		Boolean  = 8,
 		
-
 		/// <summary>
-		/// 
+		/// The datatype of a lookup where only a single item can be selected.
 		/// </summary>
 		Lookup  = 9,
 		
-
 		/// <summary>
-		/// 
+		/// The datatype of a lookup where multiple items can be selected.
 		/// </summary>
 		MultiSelectLookup  = 10,
-		
 
 		/// <summary>
-		/// 
+		/// Based on M-Files API.
 		/// </summary>
-		Integer64  = 11,
+		Integer64 = 11,
 		
-
 		/// <summary>
-		/// 
+		/// Based on M-Files API.
 		/// </summary>
 		// ReSharper disable once InconsistentNaming
 		FILETIME  = 12,
 		
-
 		/// <summary>
-		/// 
+		/// The datatype of a multi-line text property.
 		/// </summary>
 		MultiLineText  = 13,
-		
 
 		/// <summary>
-		/// 
+		/// Based on M-Files API.
 		/// </summary>
 		// ReSharper disable once InconsistentNaming
-		ACL  = 14,
+		ACL = 14,
 		
 	}
 
@@ -2121,63 +2727,445 @@ namespace MFaaP.MFWSClient
     
 
 	/// <summary>
-	/// 
+	/// Based on M-Files API.
 	/// </summary>
 	public enum MFFolderContentItemType
 	{
 
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		Unknown = 0,
 
 		/// <summary>
-		/// 
+		/// Based on M-Files API.
 		/// </summary>
-		Unknown  = 0,
-		
+		ViewFolder = 1,
 
 		/// <summary>
-		/// 
+		/// Based on M-Files API.
 		/// </summary>
-		ViewFolder  = 1,
-		
+		PropertyFolder = 2,
 
 		/// <summary>
-		/// 
+		/// Based on M-Files API.
 		/// </summary>
-		PropertyFolder  = 2,
-		
+		TraditionalFolder = 3,
 
 		/// <summary>
-		/// 
+		/// Based on M-Files API.
 		/// </summary>
-		TraditionalFolder  = 3,
-		
+		ObjectVersion = 4,
 
 		/// <summary>
-		/// 
+		/// Based on M-Files API.
 		/// </summary>
-		ObjectVersion  = 4,
-		
+		ExternalViewFolder = 5,
+
 	}
 
     /// <summary>
     /// Based on M-Files API.
     /// </summary>
-    public class Ownerpropertydef
+    public class OwnerPropertyDef
     {
         /// <summary>
         /// Based on M-Files API.
         /// </summary>
-        public Ownerpropertydef() { }
+        public OwnerPropertyDef() { }
+
         /// <summary>
         /// Based on M-Files API.
         /// </summary>
         public int ID { get; set; }
+
         /// <summary>
         /// Based on M-Files API.
         /// </summary>
         public int DependencyRelation { get; set; }
+
         /// <summary>
         /// Based on M-Files API.
         /// </summary>
         public bool IsRelationFiltering { get; set; }
-    }
+	}
+
+	/// <summary>
+	/// Holds file upload ids and property values for fetching automatic metadata. This struct is used when automatic metadata
+	/// is fetched from server.
+	/// </summary>
+	public class AutomaticMetadataRequestInfo
+	{
+		/// <summary>
+		/// List of temporary file upload ids.
+		/// </summary>
+		/// <remarks>May be empty.</remarks>
+		public List<int> UploadIds = new List<int>();
+
+		/// <summary>
+		/// Array of object's current property values.
+		/// </summary>
+		/// <remarks>May be empty.</remarks>
+		public List<PropertyValue> PropertyValues = new List<PropertyValue>();
+
+		/// <summary>
+		/// Object type.
+		/// </summary>
+		public int ObjectType;
+
+		/// <summary>
+		/// ObjVer of current object.
+		/// </summary>
+		/// <remarks>May be empty.</remarks>
+		public ObjVer ObjVer;
+
+		/// <summary>
+		/// List of metadata provider ids.
+		/// </summary>
+		/// <remarks>May be empty to return all data, or include values to filter.</remarks>
+		public List<string> MetadataProviderIds = new List<string>();
+
+		/// <summary>
+		/// Custom data.
+		/// </summary>
+		/// <remarks>May be empty.</remarks>
+		public string CustomData;
+	}
+	
+	/// <summary>
+	/// Based on M-Files API.
+	/// </summary>
+	public class PropertyValueSuggestion
+	{
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public string DisplayValue { get; set; }
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public bool IsFact { get; set; }
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public bool IsNewValue { get; set; }
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public int PropertyDef { get; set; }
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public float Quality { get; set; }
+
+		/// <summary>
+		/// Based on M-Files API.
+		/// </summary>
+		public TypedValue TypedValue { get; set; }
+	}
+	
+	/// <summary>
+	/// A request to resolve multiple vault structural aliases to ids at once.
+	/// </summary>
+	public class VaultStructureAliasRequest
+	{
+		/// <summary>
+		/// Aliases of properties to resolve.
+		/// </summary>
+		public List<string> Properties { get; set; }
+			= new List<string>();
+
+		/// <summary>
+		/// Aliases of classes to resolve.
+		/// </summary>
+		public List<string> Classes { get; set; }
+			= new List<string>();
+
+		/// <summary>
+		/// Aliases of object types to resolve.
+		/// </summary>
+		public List<string> ObjectTypes { get; set; }
+			= new List<string>();
+
+		/// <summary>
+		/// Aliases of workflows to resolve.
+		/// </summary>
+		public List<string> Workflows { get; set; }
+			= new List<string>();
+
+		/// <summary>
+		/// Aliases of workflow states to resolve.
+		/// </summary>
+		public List<string> WorkflowStates { get; set; }
+			= new List<string>();
+
+		/// <summary>
+		/// Aliases of workflow state transitions to resolve.
+		/// </summary>
+		public List<string> StateTransitions { get; set; }
+			= new List<string>();
+
+		/// <summary>
+		/// Aliases of value lists to resolve.
+		/// </summary>
+		public List<string> ValueLists { get; set; }
+			= new List<string>();
+	}
+
+	/// <summary>
+	/// The response of attempting to execute a <see cref="VaultStructureAliasRequest"/>.
+	/// </summary>
+	public class VaultStructureAliasResponse
+	{
+		/// <summary>
+		/// Aliases of properties to resolve.
+		/// </summary>
+		public Dictionary<string, int> Properties { get; set; }
+			= new Dictionary<string, int>();
+
+		/// <summary>
+		/// Aliases of classes to resolve.
+		/// </summary>
+		public Dictionary<string, int> Classes { get; set; }
+			= new Dictionary<string, int>();
+
+		/// <summary>
+		/// Aliases of object types to resolve.
+		/// </summary>
+		public Dictionary<string, int> ObjectTypes { get; set; }
+			= new Dictionary<string, int>();
+
+		/// <summary>
+		/// Aliases of workflows to resolve.
+		/// </summary>
+		public Dictionary<string, int> Workflows { get; set; }
+			= new Dictionary<string, int>();
+
+		/// <summary>
+		/// Aliases of workflow states to resolve.
+		/// </summary>
+		public Dictionary<string, int> WorkflowStates { get; set; }
+			= new Dictionary<string, int>();
+
+		/// <summary>
+		/// Aliases of workflow state transitions to resolve.
+		/// </summary>
+		public Dictionary<string, int> StateTransitions { get; set; }
+			= new Dictionary<string, int>();
+
+		/// <summary>
+		/// Aliases of value lists to resolve.
+		/// </summary>
+		public Dictionary<string, int> ValueLists { get; set; }
+			= new Dictionary<string, int>();
+	}
+	
+	/// <summary>
+	/// Holds objects and list of properties needs to be set for the objects.  This struct is used when multiple
+	/// objects need to be updated at once.
+	/// </summary>
+	public class ObjectsUpdateInfo
+	{
+		public ObjectsUpdateInfo()
+		{
+			this.MultipleObjectInfo = new List<ObjectVersionUpdateInformation>();
+		}
+
+		public ObjectsUpdateInfo(ObjVer objVer, List<PropertyValue> properties, bool allowNameChange)
+		: this()
+		{
+			this.MultipleObjectInfo.Add(new ObjectVersionUpdateInformation
+			{
+				ObjVer = objVer,
+				Properties = properties,
+				AllowNameChange = allowNameChange
+			});
+		}
+
+		public List<ObjectVersionUpdateInformation> MultipleObjectInfo;
+	}
+
+	/// <summary>
+	/// Holds objectversion and list of properties for the objectversion. This object used during property udpate.
+	/// </summary>
+	public class ObjectVersionUpdateInformation
+		: ExtendedObjectVersion
+	{
+		/// <summary>
+		/// Flag to denote if operation is allowed to change name of the object.
+		/// </summary> 
+		public bool AllowNameChange;
+	}
+
+	/// <summary>
+	/// Based on M-Files API.
+	/// </summary>
+	/// <remarks>ref: https://www.m-files.com/api/documentation/latest/index.html#MFilesAPI~MFExtensionAuthenticationSpecialUserType.html </remarks>
+	public enum MFExtensionAuthenticationSpecialUserType
+	{
+		/// <summary>
+		/// No special type.
+		/// </summary>
+		MFExtensionAuthenticationSpecialUserTypeNone = 0,
+
+		/// <summary>
+		/// Common.
+		/// </summary>
+		MFExtensionAuthenticationSpecialUserTypeCommon = 1,
+
+		/// <summary>
+		/// Indexer.
+		/// </summary>
+		MFExtensionAuthenticationSpecialUserTypeIndexer = 2,
+
+		/// <summary>
+		/// Permissions.
+		/// </summary>
+		MFExtensionAuthenticationSpecialUserTypePermissions = 3
+	}
+
+	/// <summary>
+	/// Structure defining one external repository authentication status.
+	/// </summary>
+	public class RepositoryAuthenticationStatus
+	{
+		/// <summary>
+		/// Account name used for authentication.
+		/// </summary>
+		public string AccountName { get; set; }
+
+		/// <summary>
+		/// User type used in authentication.
+		/// </summary>
+		public MFExtensionAuthenticationSpecialUserType ExtensionAuthenticationSpecialUserType { get; set; }
+
+		/// <summary>
+		/// ID of the target repository.
+		/// </summary>
+		public string TargetID { get; set; }
+
+		/// <summary>
+		/// ID of the authenticated M-Files user.
+		/// </summary>
+		public int UserID { get; set; }
+	}
+
+	/// <summary>
+	/// Structure defining one external repository authentication target.
+	/// </summary>
+	[Serializable]
+	public class RepositoryAuthenticationTarget
+	{
+		/// <summary>
+		/// Display name of the target repository.
+		/// </summary>
+		public string DisplayName { get; set; }
+
+		/// <summary>
+		/// Icon id of the target repository.
+		/// </summary>
+		public string IconID { get; set; }
+
+		/// <summary>
+		/// ID of the target repository.
+		/// </summary>
+		public string ID { get; set; }
+
+		/// <summary>
+		/// Array of plugin configurations.
+		/// </summary>
+		public List<PluginInfoConfiguration> PluginInfoConfigurations { get; set; }
+
+		/// <summary>
+		/// Flag indicating if user specific authentication is required.
+		/// </summary>
+		public bool RequiresUserSpecificAuthentication { get; set; }
+
+		/// <summary>
+		/// Current authentication status.
+		/// </summary>
+		public RepositoryAuthenticationStatus RepositoryAuthenticationStatus { get; set; }
+		
+	}
+
+	/// <summary>
+	/// The configuration for authentication plugin.
+	/// </summary>
+	public class PluginInfoConfiguration
+	{
+		/// <summary>
+		/// The name of the plugin configuration.
+		/// </summary>
+		public string Name { get; set; }
+
+		/// <summary>
+		/// Specifies if this is the default plugin configuration.
+		/// </summary>
+		public bool IsDefault { get; set; }
+
+		/// <summary>
+		/// Assembly name.
+		/// </summary>
+		public string AssemblyName { get; set; }
+
+		/// <summary>
+		/// Bridge class name.
+		/// </summary>
+		public string BridgeClassName { get; set; }
+
+		/// <summary>
+		/// Specifies if this plugin configuration is independent of scope.
+		/// </summary>
+		public bool IsScopeIndependent { get; set; }
+
+		/// <summary>
+		/// The used protocol for the plug-in, e.g. SAMLv2.0.
+		/// </summary>
+		public string Protocol { get; set; }
+
+		/// <summary>
+		/// The plugin ClientSpecific configuration.
+		/// </summary>
+		public Dictionary<string, string> Configuration { get; set; }
+
+		/// <summary>
+		/// Configuration source.
+		/// </summary>
+		public Dictionary<string, string> ConfigurationSource { get; set; }
+	}
+	
+	/// <summary>
+	/// Structure defining authentication data for external repository authentication.
+	/// </summary>
+	public class RepositoryAuthentication
+	{
+		/// <summary>
+		/// Name of the authentication configuration.
+		/// </summary>
+		public string ConfigurationName { get; set; }
+
+		/// <summary>
+		/// Username used for basic authentication.
+		/// </summary>
+		public string Username { get; set; }
+
+		/// <summary>
+		/// Password used for basic authentication.
+		/// </summary>
+		public string Password { get; set; }
+
+		/// <summary>
+		/// The authentication token for plugin authentication.
+		/// </summary>
+		public string AuthenticationToken { get; set; }
+
+		/// <summary>
+		/// The refresh token for plugin authentication.
+		/// </summary>
+		public string RefreshToken { get; set; }
+	}
 }

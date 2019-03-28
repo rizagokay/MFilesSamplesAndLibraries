@@ -141,24 +141,10 @@ namespace MFaaP.MFWSClient.Tests
 			var runner = new RestApiTestRunner<PrimitiveType<string>>(Method.POST, "/REST/server/authenticationtokens");
 
 			// When the execute method is called, return a dummy authentication token.
-			runner.RestClientMock
-				.Setup(c => c.ExecuteTaskAsync<PrimitiveType<string>>(It.IsAny<IRestRequest>(), It.IsAny<CancellationToken>()))
-				// Return a mock response.
-				.Returns(() =>
-				{
-					// Create the mock response.
-					var response = new Mock<IRestResponse<PrimitiveType<string>>>();
-
-					// Setup the return data.
-					response.SetupGet(r => r.Data)
-						.Returns(new PrimitiveType<string>()
-						{
-							Value = "hello world"
-						});
-
-					//Return the mock object.
-					return Task.FromResult(response.Object);
-				});
+			runner.ResponseData = new PrimitiveType<string>()
+			{
+				Value = "hello world"
+			};
 
 			// Create the object to send in the body.
 			var body = new Authentication
@@ -168,12 +154,10 @@ namespace MFaaP.MFWSClient.Tests
 				Password = "my password",
 				Expiration = new DateTime(2017, 01, 01, 0, 0, 0, DateTimeKind.Utc)
 			};
-
-			// We should post a collection of objvers (but only with this one in it).
 			runner.SetExpectedRequestBody(body);
 
 			// Execute.
-			runner.MFWSClient.AuthenticateUsingCredentials(body.VaultGuid.Value, body.Username, body.Password);
+			runner.MFWSClient.AuthenticateUsingCredentials(body.VaultGuid.Value, body.Username, body.Password, body.Expiration.Value);
 
 			// Verify.
 			runner.Verify();
@@ -198,24 +182,10 @@ namespace MFaaP.MFWSClient.Tests
 			var runner = new RestApiTestRunner<PrimitiveType<string>>(Method.POST, "/REST/server/authenticationtokens");
 
 			// When the execute method is called, return a dummy authentication token.
-			runner.RestClientMock
-				.Setup(c => c.ExecuteTaskAsync<PrimitiveType<string>>(It.IsAny<IRestRequest>(), It.IsAny<CancellationToken>()))
-				// Return a mock response.
-				.Returns(() =>
-				{
-					// Create the mock response.
-					var response = new Mock<IRestResponse<PrimitiveType<string>>>();
-
-					// Setup the return data.
-					response.SetupGet(r => r.Data)
-						.Returns(new PrimitiveType<string>()
-						{
-							Value = "hello world"
-						});
-
-					//Return the mock object.
-					return Task.FromResult(response.Object);
-				});
+			runner.ResponseData = new PrimitiveType<string>()
+			{
+				Value = "hello world"
+			};
 
 			// Create the object to send in the body.
 			var body = new Authentication
@@ -225,12 +195,10 @@ namespace MFaaP.MFWSClient.Tests
 				Password = "my password",
 				Expiration = new DateTime(2017, 01, 01, 0, 0, 0, DateTimeKind.Utc)
 			};
-
-			// We should post a collection of objvers (but only with this one in it).
 			runner.SetExpectedRequestBody(body);
 
 			// Execute.
-			await runner.MFWSClient.AuthenticateUsingCredentialsAsync(body.VaultGuid.Value, body.Username, body.Password);
+			await runner.MFWSClient.AuthenticateUsingCredentialsAsync(body.VaultGuid.Value, body.Username, body.Password, body.Expiration.Value);
 
 			// Verify.
 			runner.Verify();
